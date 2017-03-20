@@ -1,0 +1,14 @@
+# depslib dependency file v1.0
+1490019276 source:c:\users\atila\documents\parcours_en_profondeur\header.c
+	"header.h"
+
+1490015082 c:\users\atila\documents\parcours_en_profondeur\header.h
+	<stdio.h>
+	<string.h>
+	<stdlib.h>
+	<unistd.h>
+
+1490029649 source:c:\users\atila\documents\parcours_en_profondeur\main.c
+	<stdio.h>
+	"header.h"
+
