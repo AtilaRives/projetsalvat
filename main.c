@@ -212,50 +212,61 @@ void print_arret(str_arrets * arret){
 
 
 struct arret2{
-    long id;
-    struct arret2 *predecesseur;
+    //doublement chainée (pas forcement utilisé, mais ce sera fait)
+    struct arret2 *next;
+    str_arrets *ptr_vers_arret;
+    struct arret2 *papa;
     int distance_totale;
-    int arret_bool;
+    int arret_bool; //0non traité, 1 traité.
 };
 typedef struct arret2 arret2;
 
-struct saladier{
-    struct saladier *suivant;
-    struct saladier *precedent;
-    struct arret2 *arret;
-};
-typedef struct saladier saladier;
-void innit_arret2(saladier *conteneur, int nb_arret){
-    int i = 0;
-    conteneur->precedent=NULL;
-    conteneur->arret = NULL;
-    conteneur->suivant = NULL;
-    conteneur->arret = malloc(sizeof(arret2));
-    if (conteneur->arret==NULL){
-        printf("Erreur de malloc sur arret2");
-        exit(-3);
+
+//Prend un arret2 et le nombre d'arret contenue dans le tableau d'arrets et retourne une liste chainée avec les arrets2 convenablement innitialisé.
+//c'est a dire, arrets2 precedents, suivants, avec leurs pointeur vers arrets, arret2 papa, la distance totale de cet arret et arret_bool pour savoir si
+//l'arret a été traité ou non.
+void innit_arret2(arret2 *encre_arret2, int nb_arret){
+    int i = 0; //on traite le premier arret du tableau
+
+    arret2 *current = NULL; // on cree un arret2 pour manipulation
+    current = malloc(sizeof(arret2));
+    if (current==NULL){
+        printf("Probleme sur malloc début innit arret2");
+        exit(-5);
     }
-    conteneur->arret->distance_totale=0;
-    conteneur->arret->id=-1;
-    conteneur->arret->arret_bool=0;
 
-    saladier *conteneur_buffer=NULL;
 
+    current->next = NULL;
+    current->ptr_vers_arret = NULL;
+    current->papa=NULL;
+
+    //on traite le premier conteneur qui est lié précédemment par NULL
+    current->distance_totale=-1;
+    current->ptr_vers_arret=&tableau_d_arret[i];
+    current->arret_bool=0;
+
+
+    //on garde en mémoire le 1er conteneur
+    encre_arret2=current;
+
+    //un buffer pour chainer doublement.
+    arret2 *arret2_buffer=NULL;
+
+    //et on innit tout le conteneur avec les arrets, avec un temps à l'infini. (-1 élement deja traité)(-1 élément car on commence a 0)
     while(i < nb_arret-2){
         i++;
         //chainage double;
-        conteneur_buffer = conteneur;
-        conteneur=conteneur->suivant;
-        conteneur->precedent=conteneur_buffer;
-        conteneur->suivant = NULL;
-        conteneur->arret = malloc(sizeof(arret2));
-        if (conteneur->arret==NULL){
-            printf("Erreur de malloc sur arret2");
-            exit(-3);
+        current=current->next;
+        current->next = NULL;
+        current = malloc(sizeof(arret2));
+        if (current==NULL){
+            printf("Probleme sur malloc début innit arret2");
+            exit(-5);
         }
-        conteneur->arret->distance_totale=-1;
-        conteneur->arret->id=-1;
-        conteneur->arret->arret_bool=0;
+        current->distance_totale=-1;
+        current->ptr_vers_arret=&tableau_d_arret[i];
+        current->arret_bool=0;
+        current->papa=NULL;
     }
 
 }
@@ -269,9 +280,72 @@ void launch_parcour_dijkstra(long depart, long arrivee, int nombre_arret){
 
     parcour_dijkstra(departi, arriveei);
 }
-int parcour_dijkstra(arret2 *depart, arret2 *arrivee, int nombre_arret){
-    saladier *conteneur = NULL;
 
-   innit_arret2(conteneur, nombre_arret);
+int parcour_dijkstra(long *depart, long *arrivee, int nombre_arret){
+    arret2 *encre_arret2 = NULL;
 
+
+    //on a une liste - tableau - truc, contenant une liste de structure, ayant l'arret, le temps total, le truc (arret) precedent
+    // et un bool pour savoir si on l'a traité ou non (a moins de faire une liste doublement chainé)
+    innit_arret2(encre_arret2, nombre_arret);
+
+    //un pointeur pour la manipulation
+    arret2 *current = NULL;
+    current = encre_arret2;
+    //on cherche le départ
+    fnc_traiter_depart(depart, current);
+     //cherche et envoi l'élément le plus petit
+    fnc_find_min(encre_arret2, current);
+    //tant que current->arret->id != arrive
+    while(current->ptr_vers_arret->stop_id != arrivee){
+        //traité chacun des "fils" && "sort current && traite le current pour qu'il soit sur le chemin le plus court
+        fnc_action_on son(current);
+    }
+
+    return 0;
 }
+
+//cherche l'arret 2 avec la distance_totale la plus courte
+ void fnc_find_min(arret2 *premier_arret2, arret2 *arret2_return){
+    arret2 * current = NULL;
+    arret2 *current;
+    int distance_trouve_min = DISTANCE_MAX_POSSIBLE;
+    current = premier_arret2;
+    while(current != NULL){
+        //si distance totale n'est pas infini et le sommet n'a pas été traité
+        // et la distance trouvé est inferieur à la distance min;
+        if (current->distance_totale >= 0 && current->arret_bool==0 && current->distance_totale<distance_trouve_min){
+            arret2_return=current;
+            distance_trouve_min = current->distance_totale;
+        }
+    }
+ }
+
+void fnc_traiter_depart(long depart, arret2 *current){
+
+    arret2 *buffer_prev = NULL;
+    buffer_prev = current;
+
+    current =  current->next;
+
+    /*test lié au décalage de buffer*/
+    if(buffer_prev->ptr_vers_arret->stop_id == depard){
+        return buffer_prev;
+    }
+    else if(current->ptr_vers_arret->stop_id == depard){
+        return current;
+    }
+
+    /*Parcours de la liste chainée*/
+    while(depart!= current->ptr_vers_arret->stop_id ){
+        /*accremente les 2 pointeurs*/
+        buffer_prev = buffer_prev->next;
+        current = current->next;
+    }
+    /*On pop le current*/
+    buffer_prev->next = current->next;
+
+    current->distance_totale=0;
+
+    return current;
+ }

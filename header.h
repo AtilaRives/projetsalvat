@@ -18,7 +18,7 @@
 #define TAILLE_NOM 512
 #define TAILLE_DESTINATION 20
 #define MAX_PROFONDEUR 1000
-
+#define DISTANCE_MAX_POSSIBLE 999999
 
 /*STRUCTURE*/
 struct str_arrets{
