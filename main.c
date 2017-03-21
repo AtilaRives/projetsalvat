@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include "header.h"
+#include "distance_log_lat.h"
 
 int main(int argc, const char * argv[]) {
 

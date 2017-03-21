@@ -349,11 +349,6 @@ int parcours_profondeur(str_arrets *depart , str_arrets *arrive, int result, int
         }
     }
 
-
-
-//    printf("id current %ld\n", depart->stop_id);
-//if(profondeur==1000) {printf("id current %ld\n", depart->stop_id);}
-
     return result;
 }
 
@@ -371,9 +366,8 @@ int launch_p_prof(int depart, int arrivee, int nombre_arret, int profondeur_max)
     arriveei = arret_from_id(arrivee, nombre_arret);
 
     printf(" arrive : %d,  depart %d\n", departi->i_station,  arriveei->i_station);
-    parcours_profondeur(departi, arriveei, 0, profondeur, cpt_noeud, profondeur_max);
+    return parcours_profondeur(departi, arriveei, 0, profondeur, cpt_noeud, profondeur_max);
 
-    return 0;
 }
 
 
@@ -533,81 +527,88 @@ void innit_arret2(arret2 *ancre, int nb_arret){
 
 int parcour_dijkstra(long depart, long arrivee, int nombre_arret){
 
-    arret2 *ancre = NULL;
-    arret2 *current=NULL;
-    arret2 *le_parcour = NULL;
-    arret2 *le_debut_parcour = NULL;
-
-    /*Déclaration des structures et du "conteneur"*/
-    /*Inialisation des structure via le conteneur*/ /*distance de ts les sommets sont à -1*/
-    ancre = malloc(sizeof(arret2));
-
-    if (ancre==NULL){
-        printf("Probleme sur malloc début innit arret2");
-        exit(-5);
-    }
-
-    innit_arret2(ancre, nombre_arret);
+	arret2 *ancre = NULL; //conteneur de tous les sommets
+	arret2 *current=NULL; //le sommet que l'on manipule
+	arret2 *le_debut_parcour = NULL; //le debut du resultat de Dijkstra
+	arret2 *le_parcour = NULL; //"l'actuel" du resultat de Dijkstra
 
 
-    if(ancre == NULL){
+	//on crée notre conteneur
+	ancre = malloc(sizeof(arret2));
+	if (ancre==NULL){
+		printf("Probleme sur malloc début innit arret2");
+		exit(-5);
+	}
+	innit_arret2(ancre, nombre_arret);
+	if(ancre == NULL){
         printf("Probleme d'innitialisation de l'ancre");
         return -23;
-
-    }
-    /*Traitement du depart*/
-    current=ancre;
-    int i =0;
-    while(current != NULL && current->ptr_vers_arret->stop_id != depart ){
-        current = current->next;
-        i++;
     }
 
-    if(current == NULL){
+	//on recupere le depart
+	int i_pour_depart =0;
+	current=ancre;
+	while(current != NULL && current->ptr_vers_arret->stop_id != depart ){
+		current = current->next;
+		i_pour_depart++;
+    }
+
+	if(current == NULL){
         printf("Pas de depart trouvé\n");
         return -21;
     }
 
-    current->distance_totale=0;
+	// on innitialise la distance le depart
+	current->distance_totale=0;
 
-    le_parcour=current;
-    le_debut_parcour = current;
+	//on recupere le debut du parcour de Dijkstra pour la findfirst
+	le_debut_parcour = current;
+	//on donne le debut du resultat de Dijkstra au parcour pour la manipulation
+	le_parcour = le_debut_parcour;
+	le_debut_parcour->papa = NULL;
 
-    int plop=0;
-    /*~ while (true) tant que il reste des sommets non parcouru*/
-    arret2 *smallest = NULL;
-    smallest = find_the_smallest_one(ancre);
-    le_parcour=smallest;
-    le_debut_parcour->papa = le_parcour;
-    print_arret2(le_debut_parcour);
-
-    while(smallest!= NULL){
-
-        /*on passe son bool a true*/
-        smallest->arret_bool = 1;
-
-        /*Récupération, analyse, traitement de ses voisins*/
-        find_and_parse_neighborhood(smallest, ancre);
-         if(smallest != NULL){
-            //printf("Arret : %ld, distance : %d, traité : %d\n",smallest->ptr_vers_arret->stop_id, smallest->distance_totale, smallest->arret_bool);
-
+	//t'en qu'on trouve un sommet plus petit
+	int i_test_le_parcour = 0;
+	while(current!= NULL){
+	//while(parcour_done(ancre) == 1){
+        if(current == NULL){
+            print_temps(ancre);
         }
+		//on dit avoir traité le sommet
+		current->arret_bool=1;
+		/*Récupération, analyse, traitement de ses voisins*/
+        current = find_and_parse_neighborhood(current, ancre);
 
+		//si on a trouver un sommet du resultat (plus petit)
+		if (current != NULL){
+			//on"cree" le resultat de Dijkstra
+			if (i_test_le_parcour==0){
+				le_debut_parcour->papa = current;
+				le_parcour=le_debut_parcour->papa;
+				i_test_le_parcour++; // on incremente pour ne plus a gerer le depart
+			}
+			else
+			{
+				le_parcour->papa = current;
+				le_parcour=le_parcour->papa;
+				le_parcour->papa=NULL;
+			}
+		}
 
-        smallest=NULL;
-
-        /*trouve le plus petit*/ /*fonction find_the_smallest_one*/
-        smallest = find_the_smallest_one(ancre);
-
-    }
-
+		/*trouve le plus petit*/ /*fonction find_the_smallest_one*/
+		current = NULL;
+		current = find_the_smallest_one(ancre);
+	}
 
     //on a une liste - tableau - truc, contenant une liste de structure, ayant l'arret, le temps total, le truc (arret) precedent
     // et un bool pour savoir si on l'a traité ou non (a moins de faire une liste doublement chainé)
-   while(le_debut_parcour!=NULL){
-    printf("%ld, %s ---%d\n",le_debut_parcour->ptr_vers_arret->stop_id, le_debut_parcour->ptr_vers_arret->stop_name, le_debut_parcour->distance_totale);
-    le_debut_parcour=le_debut_parcour->papa;
-   }
+    int distance_totale=0;
+	while(le_debut_parcour!=NULL){
+		printf("%ld, %s ---%d\n",le_debut_parcour->ptr_vers_arret->stop_id, le_debut_parcour->ptr_vers_arret->stop_name, le_debut_parcour->distance_totale);
+		distance_totale += le_debut_parcour->distance_totale;
+		le_debut_parcour=le_debut_parcour->papa;
+	}
+	printf("\n\n\n%d\n", distance_totale);
     return 0;
 }
 
@@ -703,11 +704,12 @@ int parcour_done(const arret2 *ancre){
     return res;
  }
 
-void find_and_parse_neighborhood(arret2 *current, const arret2 *ancre){
+arret2* find_and_parse_neighborhood(arret2 *current, const arret2 *ancre){
 
     int i = 0;
     arret2 *walker = NULL;
     str_arrets *buffer = NULL;
+	arret2 *buffer_parcour_Dijkstra = NULL;
 
     while(i<=current->ptr_vers_arret->i_station){
         buffer = current->ptr_vers_arret->stations_suivantes[i].to_stop_id;
@@ -731,16 +733,20 @@ void find_and_parse_neighborhood(arret2 *current, const arret2 *ancre){
             /*valorisation du nouveau temps*/
             walker->distance_totale = (current->distance_totale  + current->ptr_vers_arret->stations_suivantes[i].temps_trajet);
             //printf("%d  %d   %d\n", walker->distance_totale, current->distance_totale, current->ptr_vers_arret->stations_suivantes[i].temps_trajet );
-            /*valorisation pred voisin*/
-            walker->papa = current;
+            // /*valorisation pred voisin*/
+            // walker->papa = current;
+			/*On enregistre le meilleur resultat*/
+			buffer_parcour_Dijkstra = walker;
         }
 
 
         i++;
     }
     //print_temps(ancre);
-
+	/*On "retourne" le sommet ou NULL*/
+	return  buffer_parcour_Dijkstra;
 }
+
 void print_temps(const arret2 *ancre){
    arret2 *current = NULL;
    current = ancre;
@@ -755,3 +761,74 @@ void print_arret2(arret2 *current){
 
     printf("Arret : %ld, distance : %d, traité : %d\n",current->ptr_vers_arret->stop_id, current->distance_totale, current->arret_bool);
 }
+
+
+
+
+
+
+/*Augmente la limite de profondeur de x a chaque fois*/
+void parcours_profondeur_borne(int depard, int arrivee, int nombre_arret, int profondeur_max){
+
+    while(launch_p_prof(depard, arrivee, nombre_arret, profondeur_max)==0){
+      profondeur_max+=1;
+    }
+
+}
+
+
+/*Parcour en Glouton*/
+int parcour_glouton(int depard, int arrivee ){
+
+    arret2 *ancre = NULL; //conteneur de tous les sommets
+	arret2 *current=NULL; //le sommet que l'on manipule
+	arret2 *le_debut_parcour = NULL; //le debut du resultat de glouton
+	arret2 *le_parcour = NULL; //"l'actuel" du resultat de glouton
+
+    //on crée notre conteneur
+	ancre = malloc(sizeof(arret2));
+	if (ancre==NULL){
+		printf("Probleme sur malloc début innit arret2");
+		exit(-5);
+	}
+	innit_glouoton(ancre, depart, nombre_arret);
+	if(ancre == NULL){
+        printf("Probleme d'innitialisation de l'ancre");
+        return -23;
+    }
+
+    //si trouvé
+    //afficher
+    //retourner 1
+    //sinon retourner 0
+
+}
+
+//pour sommet calculer la distance entre le sommet et le depart
+void innit_glouton(arret2 *ancre, arret *depart, int nombre_arret){
+
+    while(ancre!= NULL){
+        ancre->distance_totale =fnc_distance_entre_point(ancre->ptr_vers_arret, depart);
+    }
+
+
+}
+
+
+/*calcule la distance entre 2 station (en metre)*/
+int fnc_distance_entre_point(str_arrets *arret_a, str_arrets *arret_b){
+
+    double  = distance_m;
+    distance_m = distance(arret_a->stop_lat, arret_a->stop_lon, arret_b->stop_lat, arret_b->stop_lon, 'K');
+
+    return (distance_m*1000);
+
+}
+
+
+
+int a_etoile(){
+}
+
+
+

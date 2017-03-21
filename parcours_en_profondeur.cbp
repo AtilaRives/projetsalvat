@@ -31,6 +31,13 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="distance_log_lat.c">
+			<Option compilerVar="CC" />
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
+		<Unit filename="distance_log_lat.h">
+			<Option target="&lt;{~None~}&gt;" />
+		</Unit>
 		<Unit filename="header.c">
 			<Option compilerVar="CC" />
 		</Unit>
