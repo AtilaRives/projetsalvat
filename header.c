@@ -529,9 +529,6 @@ int parcour_dijkstra(long depart, long arrivee, int nombre_arret){
 
 	arret2 *ancre = NULL; //conteneur de tous les sommets
 	arret2 *current=NULL; //le sommet que l'on manipule
-	arret2 *le_debut_parcour = NULL; //le debut du resultat de Dijkstra
-	arret2 *le_parcour = NULL; //"l'actuel" du resultat de Dijkstra
-
 
 	//on crée notre conteneur
 	ancre = malloc(sizeof(arret2));
@@ -561,101 +558,52 @@ int parcour_dijkstra(long depart, long arrivee, int nombre_arret){
 	// on innitialise la distance le depart
 	current->distance_totale=0;
 
-	//on recupere le debut du parcour de Dijkstra pour la findfirst
-	le_debut_parcour = current;
-	//on donne le debut du resultat de Dijkstra au parcour pour la manipulation
-	le_parcour = le_debut_parcour;
-	le_debut_parcour->papa = NULL;
 
 	//t'en qu'on trouve un sommet plus petit
-	int i_test_le_parcour = 0;
-	while(current!= NULL){
-	//while(parcour_done(ancre) == 1){
-        if(current == NULL){
-            print_temps(ancre);
-        }
+//	int i_test_le_parcour = 0;
+    arret2 *smallest = NULL;
+    /*Le départ (current) étant le 1er plus petit (smallest)*/
+    smallest = current;
+
+	while(current!= NULL && current->ptr_vers_arret->stop_id != arrivee){
+	//while(parcour_done(ancre) == 1){ //utilisable avec test si min =-1 arreter
+
 		//on dit avoir traité le sommet
-		current->arret_bool=1;
+		smallest->arret_bool=1;
 		/*Récupération, analyse, traitement de ses voisins*/
-        current = find_and_parse_neighborhood(current, ancre);
+       current = find_and_parse_neighborhood(smallest, ancre, arrivee);
+       if(current == NULL){
+        printf("current est à NULL\n");
+       }
 
 		//si on a trouver un sommet du resultat (plus petit)
-		if (current != NULL){
-			//on"cree" le resultat de Dijkstra
-			if (i_test_le_parcour==0){
-				le_debut_parcour->papa = current;
-				le_parcour=le_debut_parcour->papa;
-				i_test_le_parcour++; // on incremente pour ne plus a gerer le depart
-			}
-			else
-			{
-				le_parcour->papa = current;
-				le_parcour=le_parcour->papa;
-				le_parcour->papa=NULL;
-			}
-		}
+		if (current != NULL && current->ptr_vers_arret->stop_id != arrivee){
 
-		/*trouve le plus petit*/ /*fonction find_the_smallest_one*/
-		current = NULL;
-		current = find_the_smallest_one(ancre);
+            /*trouve le plus petit*/ /*fonction find_the_smallest_one*/
+            smallest = NULL;
+            smallest = find_the_smallest_one(ancre);
+        }
 	}
+
+//	/*on traite l'arrivée*/
+//	smallest->papa = current;
+//	current = smallest;
+
 
     //on a une liste - tableau - truc, contenant une liste de structure, ayant l'arret, le temps total, le truc (arret) precedent
     // et un bool pour savoir si on l'a traité ou non (a moins de faire une liste doublement chainé)
     int distance_totale=0;
-	while(le_debut_parcour!=NULL){
-		printf("%ld, %s ---%d\n",le_debut_parcour->ptr_vers_arret->stop_id, le_debut_parcour->ptr_vers_arret->stop_name, le_debut_parcour->distance_totale);
-		distance_totale += le_debut_parcour->distance_totale;
-		le_debut_parcour=le_debut_parcour->papa;
+	while(current!=NULL){
+		printf("%ld, %s %s ---%d\n",current->ptr_vers_arret->stop_id, current->ptr_vers_arret->stop_name, current->ptr_vers_arret->stop_desc, current->distance_totale);
+		distance_totale += current->distance_totale;
+		current=current->papa;
 	}
 	printf("\n\n\n%d\n", distance_totale);
+
+	//print_temps(ancre);
     return 0;
 }
 
-//cherche l'arret 2 avec la distance_totale la plus courte
- void fnc_find_min(arret2 *premier_arret2, arret2 *arret2_return){
-
-    arret2 * current = NULL;
-    int distance_trouve_min = DISTANCE_MAX;
-    current = premier_arret2;
-
-    while(current != NULL){
-        //si distance totale n'est pas infini et le sommet n'a pas été traité
-        // et la distance trouvé est inferieur à la distance min;
-        if (current->distance_totale >= 0 && current->arret_bool==0 && current->distance_totale<distance_trouve_min){
-            arret2_return=current;
-            distance_trouve_min = current->distance_totale;
-        }
-    }
- }
-
-/*Ancienne fonction de pop qui n'utilise pas le booleen*/
-//void pop_arret2(long depart, arret2 *current){
-//
-//    arret2 *buffer_prev = NULL;
-//    buffer_prev = current;
-//
-//    current =  current->next;
-//
-//    /*test lié au décalage de buffer*/
-//    if(buffer_prev->ptr_vers_arret->stop_id == depard){
-//        current = buffer_prev;
-//    }
-//    else if(current->ptr_vers_arret->stop_id == depard){
-//        current;
-//    }
-//
-//    /*Parcours de la liste chainée*/
-//    while(depart!= current->ptr_vers_arret->stop_id ){
-//        /*accremente les 2 pointeurs*/
-//        buffer_prev = buffer_prev->next;
-//        current = current->next;
-//    }
-//    /*On pop le current*/
-//    buffer_prev->next = current->next;
-//
-//    current->distance_totale=0;
-// }
 
 
 void bool_to_true(long id, arret2 *current){
@@ -704,47 +652,56 @@ int parcour_done(const arret2 *ancre){
     return res;
  }
 
-arret2* find_and_parse_neighborhood(arret2 *current, const arret2 *ancre){
+arret2* find_and_parse_neighborhood(arret2 *current, const arret2 *ancre, long arrivee){
 
     int i = 0;
     arret2 *walker = NULL;
     str_arrets *buffer = NULL;
 	arret2 *buffer_parcour_Dijkstra = NULL;
 
+    /* Tant qu'il reste un voisin*/
     while(i<=current->ptr_vers_arret->i_station){
         buffer = current->ptr_vers_arret->stations_suivantes[i].to_stop_id;
         walker = ancre;
         /*Parcour de la liste des arret2*/
-        while( (walker->next != NULL ) && (walker->ptr_vers_arret != buffer) ){
+        while( walker->next != NULL  && walker->ptr_vers_arret != buffer  ){
                 walker = walker->next;
         }
 
-        if(walker == NULL){
-            printf("Walker == NULL\n");
-            exit(-6);
+        if(walker->arret_bool==0){
+
+            if(walker == NULL){
+                printf("Walker == NULL\n");
+                exit(-6);
+            }
+
+            /*Valorisation distance voisin*/
+            //walker->distance_totale = buffer->stations_suivantes[i].temps_trajet + current->distance_totale ;
+
+            /*traitement*/
+
+            /*Cas particulier, nous avons trouvé l'arivée*/
+            if(walker->ptr_vers_arret->stop_id == arrivee){
+                walker->papa = current;
+                current = walker;
+                return current;
+            }
+            /*test de temps*/
+            else if(walker->distance_totale == -1 || walker->distance_totale > (current->distance_totale  + current->ptr_vers_arret->stations_suivantes[i].temps_trajet)){
+                /*valorisation du nouveau temps*/
+                walker->distance_totale =(current->distance_totale  + current->ptr_vers_arret->stations_suivantes[i].temps_trajet);
+               // printf("di->%d   dj->%d   val(ij)->%d\n", walker->distance_totale, current->distance_totale, current->ptr_vers_arret->stations_suivantes[i].temps_trajet );
+
+                // /*valorisation pred voisin*/
+                walker->papa = current;
+               // print_arret2(walker);
+            }
         }
-
-        /*Valorisation distance voisin*/
-        walker->distance_totale = buffer->stations_suivantes[i].temps_trajet;
-
-        /*traitement*/
-        /*test de temps*/
-        if(walker->distance_totale >= (current->distance_totale  + current->ptr_vers_arret->stations_suivantes[i].temps_trajet)){
-            /*valorisation du nouveau temps*/
-            walker->distance_totale = (current->distance_totale  + current->ptr_vers_arret->stations_suivantes[i].temps_trajet);
-            //printf("%d  %d   %d\n", walker->distance_totale, current->distance_totale, current->ptr_vers_arret->stations_suivantes[i].temps_trajet );
-            // /*valorisation pred voisin*/
-            // walker->papa = current;
-			/*On enregistre le meilleur resultat*/
-			buffer_parcour_Dijkstra = walker;
-        }
-
-
         i++;
     }
     //print_temps(ancre);
 	/*On "retourne" le sommet ou NULL*/
-	return  buffer_parcour_Dijkstra;
+	return  walker;
 }
 
 void print_temps(const arret2 *ancre){
@@ -752,83 +709,86 @@ void print_temps(const arret2 *ancre){
    current = ancre;
 
     while(current != NULL){
-        printf("Arret : %ld, distance : %d, traité : %d\n",current->ptr_vers_arret->stop_id, current->distance_totale, current->arret_bool);
+            if(current->distance_totale>-1){
+                 printf("Arret : %ld, distance : %d, traité : %d\n",current->ptr_vers_arret->stop_id, current->distance_totale, current->arret_bool);
+            }
+
         current = current->next;
     }
 }
 
 void print_arret2(arret2 *current){
 
-    printf("Arret : %ld, distance : %d, traité : %d\n",current->ptr_vers_arret->stop_id, current->distance_totale, current->arret_bool);
+    printf("Arret : %ld, %s %s distance : %d, traité : %d\n",current->ptr_vers_arret->stop_id, current->ptr_vers_arret->stop_name, current->ptr_vers_arret->stop_desc,  current->distance_totale, current->arret_bool);
 }
 
 
 
 
 
-
-/*Augmente la limite de profondeur de x a chaque fois*/
-void parcours_profondeur_borne(int depard, int arrivee, int nombre_arret, int profondeur_max){
-
-    while(launch_p_prof(depard, arrivee, nombre_arret, profondeur_max)==0){
-      profondeur_max+=1;
-    }
-
-}
-
-
-/*Parcour en Glouton*/
-int parcour_glouton(int depard, int arrivee ){
-
-    arret2 *ancre = NULL; //conteneur de tous les sommets
-	arret2 *current=NULL; //le sommet que l'on manipule
-	arret2 *le_debut_parcour = NULL; //le debut du resultat de glouton
-	arret2 *le_parcour = NULL; //"l'actuel" du resultat de glouton
-
-    //on crée notre conteneur
-	ancre = malloc(sizeof(arret2));
-	if (ancre==NULL){
-		printf("Probleme sur malloc début innit arret2");
-		exit(-5);
-	}
-	innit_glouoton(ancre, depart, nombre_arret);
-	if(ancre == NULL){
-        printf("Probleme d'innitialisation de l'ancre");
-        return -23;
-    }
-
-    //si trouvé
-    //afficher
-    //retourner 1
-    //sinon retourner 0
-
-}
-
-//pour sommet calculer la distance entre le sommet et le depart
-void innit_glouton(arret2 *ancre, arret *depart, int nombre_arret){
-
-    while(ancre!= NULL){
-        ancre->distance_totale =fnc_distance_entre_point(ancre->ptr_vers_arret, depart);
-    }
+//
+///*Augmente la limite de profondeur de x a chaque fois*/
+//void parcours_profondeur_borne(int depard, int arrivee, int nombre_arret, int profondeur_max){
+//
+//    while(launch_p_prof(depard, arrivee, nombre_arret, profondeur_max)==0){
+//      profondeur_max+=1;
+//    }
+//
+//}
 
 
-}
+///*Parcour en Glouton*/
+//int parcour_glouton(int depard, int arrivee ){
+//
+//    arret2 *ancre = NULL; //conteneur de tous les sommets
+//	arret2 *current=NULL; //le sommet que l'on manipule
+//	arret2 *le_debut_parcour = NULL; //le debut du resultat de glouton
+//	arret2 *le_parcour = NULL; //"l'actuel" du resultat de glouton
+//
+//    //on crée notre conteneur
+//	ancre = malloc(sizeof(arret2));
+//	if (ancre==NULL){
+//		printf("Probleme sur malloc début innit arret2");
+//		exit(-5);
+//	}
+//	innit_glouoton(ancre, depart, nombre_arret);
+//	if(ancre == NULL){
+//        printf("Probleme d'innitialisation de l'ancre");
+//        return -23;
+//    }
+//
+//    //si trouvé
+//    //afficher
+//    //retourner 1
+//    //sinon retourner 0
+//
+//}
+
+////pour sommet calculer la distance entre le sommet et le depart
+//void innit_glouton(arret2 *ancre, arret *depart, int nombre_arret){
+//
+//    while(ancre!= NULL){
+//        ancre->distance_totale =fnc_distance_entre_point(ancre->ptr_vers_arret, depart);
+//    }
+//
+//
+//}
 
 
 /*calcule la distance entre 2 station (en metre)*/
-int fnc_distance_entre_point(str_arrets *arret_a, str_arrets *arret_b){
+//int fnc_distance_entre_point(str_arrets *arret_a, str_arrets *arret_b){
+//
+//    double  = distance_m;
+//    distance_m = distance(arret_a->stop_lat, arret_a->stop_lon, arret_b->stop_lat, arret_b->stop_lon, 'K');
+//
+//    return (distance_m*1000);
+//
+//}
 
-    double  = distance_m;
-    distance_m = distance(arret_a->stop_lat, arret_a->stop_lon, arret_b->stop_lat, arret_b->stop_lon, 'K');
-
-    return (distance_m*1000);
-
-}
 
 
-
-int a_etoile(){
-}
+//int a_etoile(){
+//}
 
 
 

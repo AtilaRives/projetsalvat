@@ -88,7 +88,7 @@ void fnc_find_min(arret2 *premier_arret2, arret2 *arret2_return);
 void bool_to_true(long id, arret2 *current);
 int parcour_done(const arret2 *ancre);
 arret2* find_the_smallest_one(const arret2 *ancre);
-arret2* find_and_parse_neighborhood(arret2 *current, const arret2 *ancre);
+arret2* find_and_parse_neighborhood(arret2 *current, const arret2 *ancre, long arrivee);
 
 
 #endif /* header_h */

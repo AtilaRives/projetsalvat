@@ -1,15 +1,18 @@
 # depslib dependency file v1.0
-1490129340 source:c:\users\atila\documents\parcours_en_profondeur\header.c
+1490177588 source:c:\users\atila\documents\parcours_en_profondeur\header.c
 	"header.h"
 
-1490130392 c:\users\atila\documents\parcours_en_profondeur\header.h
+1490174612 c:\users\atila\documents\parcours_en_profondeur\header.h
 	<stdio.h>
 	<string.h>
 	<stdlib.h>
 	<unistd.h>
 	<math.h>
 
-1490116111 source:c:\users\atila\documents\parcours_en_profondeur\main.c
+1490173710 source:c:\users\atila\documents\parcours_en_profondeur\main.c
 	<stdio.h>
 	"header.h"
+	"distance_log_lat.h"
+
+1490130998 c:\users\atila\documents\parcours_en_profondeur\distance_log_lat.h
 

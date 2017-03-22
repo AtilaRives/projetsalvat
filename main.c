@@ -80,8 +80,9 @@ int main(int argc, const char * argv[]) {
    //launch_p_prof(2390, 2453, nombre_arret, profondeur_max);
    // launch_p_prof(4799027, 6046800, nombre_arret, profondeur_max);
 
-    parcour_dijkstra(2390, 2453, nombre_arret);
-
+   parcour_dijkstra(2313, 2389, nombre_arret);
+    //parcour_dijkstra(2313, 2389, nombre_arret);
+   // parcour_dijkstra(2313, 2266, nombre_arret);
     printf("Fin du main\n");
 
     return 0;
