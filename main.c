@@ -8,13 +8,21 @@
 
 #include <stdio.h>
 #include "header.h"
-#include "distance_log_lat.h"
+
 
 int main(int argc, const char * argv[]) {
 
-    int profondeur_max;
+    int profondeur_max = 0;
     int i = 0;
     int nombre_arret;
+    int *cpt_de_noeud = NULL;
+
+    cpt_de_noeud = malloc(sizeof(int));
+    if(cpt_de_noeud==NULL){
+        printf("Probleme avec le malloc sur le compteur de noeuds\n");
+        exit(-42);
+    }
+    *cpt_de_noeud=0;
 
     /* mise en argument de la profondeur MAX */
     /* Test argument*/
@@ -23,10 +31,13 @@ int main(int argc, const char * argv[]) {
         profondeur_max = 10;
         //return -1;
     }
+    else{
+        profondeur_max == atoi(argv[1]);
+    }
 
 
     /* Stock argument */
-    //profondeur_max = atoi(argv[1]);
+
 
     fnc_innit_tableau();
 
@@ -34,6 +45,8 @@ int main(int argc, const char * argv[]) {
     FILE* file_arcs= NULL;
     FILE* file_arrets = NULL;
     FILE* file_transferts = NULL;
+
+
 
     file_arcs = fopen("C:\\Users\\atila\\Documents\\AlgoRATP\\arcs.txt", "r");
     if (file_arcs == NULL)
@@ -56,6 +69,7 @@ int main(int argc, const char * argv[]) {
         return -12;
     }
 
+
     fnc_remplir_arret(file_arrets);
     /*Compteur nombre d'arret*/
     while(tableau_d_arret[i].stop_id!=(-1) && i<TAILLE_TAB)
@@ -75,30 +89,47 @@ int main(int argc, const char * argv[]) {
     fclose(file_arrets);
     fclose(file_transferts);
 
-   // fnc_afficher_destination(nombre_arret);
-    /*Appel fonction parcours en profondeur*/
-   //launch_p_prof(2390, 2453, nombre_arret, profondeur_max);
-   // launch_p_prof(4799027, 6046800, nombre_arret, profondeur_max);
 
-   parcour_dijkstra(2313, 2389, nombre_arret);
-    //parcour_dijkstra(2313, 2389, nombre_arret);
-   // parcour_dijkstra(2313, 2266, nombre_arret);
-    printf("Fin du main\n");
+    /*Appel fonctions*/
+
+
+
+   *cpt_de_noeud=0;
+   printf("DEBUT PARCOUR LARGEUR\n-----------------------------------\n");
+   fnc_chercher_une_destination(2313, 2389, nombre_arret, cpt_de_noeud);
+   printf("Nombre de noeuds parcourus %d\n\n\n", *cpt_de_noeud);
+
+
+   *cpt_de_noeud=0;
+   printf("DEBUT PARCOUR PROFONDEUR AVEC LIMITE A 30\n-----------------------------------\n");
+   launch_p_prof(2313, 2389, nombre_arret, 30, cpt_de_noeud);
+   printf("Nombre de noeuds parcourus %d  <- valeur non coherentes\n\n\n", *cpt_de_noeud);
+
+
+   *cpt_de_noeud=0;
+   printf("DEBUT PARCOUR PROFONDEUR INCREMENTALE\n-----------------------------------\n");
+   parcours_profondeur_borne(2313, 2389, nombre_arret, 1, cpt_de_noeud);
+   printf("Nombre de noeuds parcourus %d\n\n\n", *cpt_de_noeud);
+
+
+
+   *cpt_de_noeud=0;
+   printf("DEBUT PARCOUR DIJKSTRA\n-----------------------------------\n");
+   parcour_dijkstra(2313, 2389, nombre_arret, cpt_de_noeud);
+   printf("Nombre de noeuds parcourus %d\n", cpt_de_noeud);
+   printf("Et encore, on s'arrete quand le i min est infini, sinon il faudrait encore parcourir tous nos sommets\n\n", *cpt_de_noeud);
+
+
+   *cpt_de_noeud=0;
+    printf("DEBUT PARCOUR GLOUTON\n-----------------------------------\n");
+    parcour_glouton(2313,2389,nombre_arret, cpt_de_noeud);
+    printf("Nombre de noeuds parcourus %d\n\n\n", *cpt_de_noeud);
+
+
+
+
+    printf("END\n");
 
     return 0;
 }
 
-
-
-
-
-
-void fnc_afficher_destination(int nb_arret){
-    for (int i=0; i<nb_arret-10; i++){
-        printf("%ld\n", tableau_d_arret[i].stop_id);
-        for(int j = 0; j<= tableau_d_arret[i].i_station; j++){
-            printf("   %ld   ",tableau_d_arret[i].stations_suivantes[j].to_stop_id->stop_id);
-            printf("%d\n",tableau_d_arret[i].stations_suivantes[j].temps_trajet);
-        }
-    }
-}
