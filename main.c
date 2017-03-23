@@ -93,7 +93,7 @@ int main(int argc, const char * argv[]) {
     /*Appel fonctions*/
 
 
-
+    the_compteur=0;
    *cpt_de_noeud=0;
    printf("DEBUT PARCOUR LARGEUR\n-----------------------------------\n");
    fnc_chercher_une_destination(2313, 2389, nombre_arret, cpt_de_noeud);
@@ -104,6 +104,7 @@ int main(int argc, const char * argv[]) {
    printf("DEBUT PARCOUR PROFONDEUR AVEC LIMITE A 30\n-----------------------------------\n");
    launch_p_prof(2313, 2389, nombre_arret, 30, cpt_de_noeud);
    printf("Nombre de noeuds parcourus %d  <- valeur non coherentes\n\n\n", *cpt_de_noeud);
+   printf("Un compteur en global %d\n", the_compteur);
 
 
    *cpt_de_noeud=0;
@@ -128,7 +129,7 @@ int main(int argc, const char * argv[]) {
 
 
 
-    printf("END\n");
+    printf("END %d\n");
 
     return 0;
 }

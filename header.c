@@ -553,6 +553,7 @@ int parcours_profondeur(str_arrets *depart , str_arrets *arrive, int result, int
             //on parcoure un nouveau noeud
 
             (*cpt_noeud)++;
+            the_compteur++;
 
         /*Appel récurssif*/
         result = parcours_profondeur(depart->stations_suivantes[compteur].to_stop_id, arrive, result, profondeur, cpt_noeud, max_profondeur);
